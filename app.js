@@ -5,15 +5,19 @@ var io = require('socket.io')(http);
 var redis = require('redis');
 const redisAdapter = require('socket.io-redis');
 const axios = require('axios');
-
 dotenv.config();
+
+const pub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
+const sub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
+
+
 
 
 app.get('/', function(req, res){
     res.send('<h1>Peasy</h1>');
 });
 
-io.adapter(redisAdapter({ host: process.env.REDIS_HOST, port: process.env.REDIS_PORT }));
+io.adapter(redisAdapter({pubClient: pub, subClient: sub}));
 const port = process.env.PORT;
 http.listen(port, function(){
     console.log('listening on *:' + port);
@@ -24,12 +28,62 @@ require('socketio-auth')(io, {
     disconnect: disconnect,
     timeout:process.env.AUTH_TIMEOUT
 });
+
 io.on('connection', function (socket) {
     console.log("Socket:" + socket.id + "connect" );
-    socket.on('send_message', function (from, msg, room='default') {
+    socket.on('send_message', function (msg, room='default') {
         if(socket.rooms[room] ){
-            console.log('I received a private message by ', from, ' saying ', msg);
-            io.sockets.to(room).emit("receiver_data", {from: from, msg: msg});
+            var roomDetail = io.sockets.adapter.rooms[room];
+            var socketsInRoom = Object.keys(roomDetail.sockets);
+
+            io.sockets.to(room).emit("receiver_message", {
+                from: {
+                    user_id : socket.client.user.user_id,
+                    user_type : socket.client.user.user_type,
+                    user : socket.client.user.user,
+                },
+                msg: msg});
+
+            axios({
+                method: 'post',
+                url: process.env.API_URL + 'v1/socket/check-chat-room',
+                data: {
+                    channel: room,
+                }
+            }).then(function(response){
+
+                var roomData = response.data;
+                var members = roomData.room_members;
+
+                members.forEach(function(member){
+                    var online = false;
+                    socketsInRoom.forEach(function(item, index){
+                        var socketInRoom = io.sockets.connected[item];
+                        var clientUser = socketInRoom.client.user;
+
+                        if(member.user_id === clientUser.user_id && member.user_type === clientUser.user_type){
+                            online = true;
+                        }
+                    });
+                    if(!online && !(member === socket.client.user && member === socket.client.user)){
+                        console.log("Push cho user " + member.user_id);
+                    }
+                });
+                pub.publish("peasy_database_content", JSON.stringify({
+
+                    user_id : socket.client.user.user_id,
+                    user_type : socket.client.user.user_type,
+                    room: roomData.id,
+                    socket_id : socket.id,
+                    msg: msg}));
+
+            }).catch(function(error){
+                messageToClient(socket.id, 'send_message_failed', "Error send message");
+
+            });
+
+
+
         }else{
             console.log("user not in room");
             messageToClient(socket.id, 'user_not_in_room', "user not in room");
