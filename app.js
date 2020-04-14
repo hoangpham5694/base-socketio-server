@@ -35,25 +35,8 @@ io.on('connection', function (socket) {
         if(socket.rooms[room] ){
             var roomDetail = io.sockets.adapter.rooms[room];
             var socketsInRoom = Object.keys(roomDetail.sockets);
-
-            io.sockets.to(room).emit("receiver_message", {
-                from: {
-                    user_id : socket.client.user.user_id,
-                    user_type : socket.client.user.user_type,
-                    user : socket.client.user.user,
-                },
-                msg: msg});
-
-            axios({
-                method: 'post',
-                url: process.env.API_URL + 'v1/socket/check-chat-room',
-                data: {
-                    channel: room,
-                }
-            }).then(function(response){
-
-                var roomData = response.data;
-                var members = roomData.room_members;
+            checkChatRoom(socket, room).then(function(success){
+                var members = success.room_members;
 
                 members.forEach(function(member){
                     var online = false;
@@ -69,18 +52,16 @@ io.on('connection', function (socket) {
                         console.log("Push cho user " + member.user_id);
                     }
                 });
-                pub.publish("peasy_database_content", JSON.stringify({
-
-                    user_id : socket.client.user.user_id,
-                    user_type : socket.client.user.user_type,
-                    room: roomData.id,
-                    socket_id : socket.id,
-                    msg: msg}));
-
+                sendMessage(socket, success, msg).then(function (response){
+                    io.sockets.to(room).emit("receiver_message", {
+                        msg: response.data});
+                }).catch(function(error){
+                    messageToClient(socket.id, 'send_message_failed', "Error send message");
+                });
             }).catch(function(error){
                 messageToClient(socket.id, 'send_message_failed', "Error send message");
+            })
 
-            });
 
 
 
@@ -89,8 +70,6 @@ io.on('connection', function (socket) {
             messageToClient(socket.id, 'user_not_in_room', "user not in room");
         }
 
-
-      // publisher.publish("peasy_database_content", JSON.stringify({from: from, msg: msg}));
     });
     socket.join('default');
     socket.on('room', function(room){
@@ -190,4 +169,46 @@ function messageToClient(socketId ,code, message, data = null){
     };
     io.to(socketId).emit("system_message", msg);
     console.log("send message to "+ socketId);
+}
+
+function sendMessage(socket, roomData, msg){
+   // console.log(socket.client.user.user_id);
+    return new Promise((resolve, reject) => {
+        axios({
+            method: 'post',
+            url: process.env.API_URL + 'v1/socket/send-message',
+            data: {
+                user_id : socket.client.user.user_id,
+                user_type : socket.client.user.user_type,
+                room_id: roomData.id,
+                socket_id : socket.id,
+                content: msg
+            }
+        }).then(function(response){
+            resolve(response);
+        }).catch(function(error){
+            reject(error);
+        });
+
+
+    });
+
+}
+
+function checkChatRoom(socket, room){
+    return new Promise((relsove, reject) => {
+        axios({
+            method: 'post',
+            url: process.env.API_URL + 'v1/socket/check-chat-room',
+            data: {
+                channel: room,
+            }
+        }).then(function(response){
+            var roomData = response.data;
+            relsove(roomData);
+        }).catch(function(error){
+            return reject(error)
+        });
+    });
+
 }
