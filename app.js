@@ -31,6 +31,17 @@ require('socketio-auth')(io, {
 
 io.on('connection', function (socket) {
     console.log("Socket:" + socket.id + "connect" );
+
+    socket.on('seen_message', function(messageId) {
+        seenMessage(socket, messageId).then(function (response){
+            var room = process.env.ROOM_ALIAS + response.room_id;
+            io.sockets.to(room).emit("seen_message_response", {
+                message: response});
+        }).catch(function (error){
+            messageToClient(socket.id, error.code, error.message);
+        });
+    });
+
     socket.on('send_message', function (msg, room='default') {
         if(socket.rooms[room] ){
             var roomDetail = io.sockets.adapter.rooms[room];
@@ -74,16 +85,8 @@ io.on('connection', function (socket) {
     socket.join('default');
     socket.on('room', function(room){
        // socket.leaveAll();
-
-        axios({
-            method: 'post',
-            url: process.env.API_URL + 'v1/socket/check-chat-room',
-            data: {
-                channel: room,
-            }
-        }).then(function(response){
-
-            var roomData = response.data;
+        checkChatRoom(socket, room).then(function (response){
+            var roomData = response;
             var members = roomData.room_members;
             var joined = false;
 
@@ -91,21 +94,18 @@ io.on('connection', function (socket) {
                 var currentUser = socket.client.user;
 
                 if(member.user_id === currentUser.user_id && member.user_type === currentUser.user_type){
-
                     joined = true;
                     console.log(socket.rooms);
                     socket.join(room);
-                    messageToClient(socket.id, 'join_room_success', "join room success", {'room':room});
+                    messageToClient(socket.id, 'join_room_success', "join room success", {'room':roomData});
                     console.log(socket.id + " join room " + room);
-
                 }
             });
             if(!joined){
                 messageToClient(socket.id, 'join_room_failed', "join room faled");
             }
-        }).catch(function(error){
+        }).catch(function (error) {
             messageToClient(socket.id, 'join_room_failed', "join room faled");
-
         });
 
 
@@ -187,7 +187,7 @@ function sendMessage(socket, roomData, msg){
         }).then(function(response){
             resolve(response);
         }).catch(function(error){
-            reject(error);
+            reject(error.response.data);
         });
 
 
@@ -207,8 +207,26 @@ function checkChatRoom(socket, room){
             var roomData = response.data;
             relsove(roomData);
         }).catch(function(error){
-            return reject(error)
+            return reject(error.response.data)
         });
     });
 
+}
+function seenMessage(socket, messageId){
+    console.log(messageId);
+    return new Promise((relsove, reject) => {
+        axios({
+            method: 'post',
+            url: process.env.API_URL + 'v1/socket/seen-message',
+            data: {
+                user_id: socket.client.user.user_id,
+                user_type : socket.client.user.user_type,
+                message_id : messageId
+            }
+        }).then(function(response){
+            relsove(response.data);
+        }).catch(function(error){
+            return reject(error.response.data)
+        });
+    });
 }
