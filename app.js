@@ -11,8 +11,6 @@ const pub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
 const sub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
 
 
-
-
 app.get('/', function(req, res){
     res.send('<h1>Peasy</h1>');
 });
@@ -84,7 +82,6 @@ io.on('connection', function (socket) {
     });
     socket.join('default');
     socket.on('room', function(room){
-       // socket.leaveAll();
         checkChatRoom(socket, room).then(function (response){
             var roomData = response;
             var members = roomData.room_members;
@@ -108,11 +105,6 @@ io.on('connection', function (socket) {
             messageToClient(socket.id, 'join_room_failed', "join room faled");
         });
 
-
-    });
-    socket.on("new_connect", function(data){
-        console.log("new connect");
-        console.log(io.of("/").connected.length);
 
     });
 });
