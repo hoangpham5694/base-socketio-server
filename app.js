@@ -105,7 +105,10 @@ io.on('connection', function (socket) {
             messageToClient(socket.id, 'join_room_failed', "join room faled");
         });
 
-
+    });
+    socket.on('leave_room', function(room){
+        socket.leave(room);
+        console.log(socket.rooms);
     });
 });
 
