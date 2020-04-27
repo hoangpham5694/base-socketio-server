@@ -1,21 +1,32 @@
 {
-  "name": "socket_test_2",
+  "name": "socketio-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "main": "main.js",
+  "repository": "https://github.com/Quynh-Nguyen/socketio-server.git",
+  "author": "Drone Team",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^0.19.2",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "redis": "^3.0.2",
-    "socket.io": "^2.3.0",
-    "socket.io-redis": "^5.2.0",
-    "socketio-auth": "^0.1.1"
+    "axios": "^0.18.0",
+    "bugsnag": "^2.3.1",
+    "component-emitter": "^1.2.1",
+    "debug": "^3.1.0",
+    "dotenv": "^5.0.1",
+    "express": "^4.16.3",
+    "flat": "^4.0.0",
+    "fs": "^0.0.1-security",
+    "hashids": "^1.1.4",
+    "http": "^0.0.0",
+    "https": "^1.0.0",
+    "schemapack": "^1.4.2",
+    "socket.io": "^2.1.0",
+    "string-format": "^1.0.0",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1"
+  },
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore --ignore-pattern \"!**/.*\" .",
+    "test": "node src/main.js"
   }
 }

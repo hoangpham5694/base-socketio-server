@@ -1,0 +1,12 @@
+#Drone SocketIO Coding Standard Checker
+image: node:8.9.3
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - node
+        script: # Modify the commands below to build your repository.
+          - npm install yarn
+          - yarn add eslint
+          - yarn lint
