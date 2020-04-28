@@ -4,6 +4,7 @@ const RoomHandler = require('./roomHandler')
 const MessageHandler = require('./messageHandler')
 const events = require('../constants/events')
 
+
 module.exports = class BaseHandler {
     constructor (socket, io) {
         this.socket = socket
@@ -29,8 +30,8 @@ module.exports = class BaseHandler {
 
     message () {
         let self = this
-        this.socket.on(events.REQUEST_SEND_MSG, (data) => {
-            self.messageHandler.requestSendMessage(data)
+        this.socket.on(events.REQUEST_SEND_MSG, (data, room) => {
+            self.messageHandler.requestSendMessage(data, room)
         })
         this.socket.on(events.REQUEST_SEEN_MSG, (data) => {
             self.messageHandler.requestSeenMessage(data)

@@ -5,6 +5,9 @@ const format = require('string-format')
 const routes = require('../constants/apis')
 const events = require('../constants/events')
 const serverComponent = require('../components/serverComponent')
+const SystemHandler = require('../handlers/systemHandler')
+const notificationError = require('../constants/notificationError')
+const notificationSuccess = require('../constants/notificationSuccess')
 
 module.exports = class RoomHandler {
     constructor(socket, io) {
@@ -12,33 +15,57 @@ module.exports = class RoomHandler {
         this.io = io
         this.socket.component = {}
         this.serverComponent = new serverComponent()
+        this.systemHandler = new SystemHandler(this.socket, this.io)
     }
 
-    requestRoom(data) {
+    requestRoom(room) {
+        var data = {
+            'channel' : room,
+        };
+
         this.socket.component = {}
         this.socket.component.server = this.serverComponent
         this.axiosClient = new AxiosHelper()
-        //Todo: handle request join room
+        var url = routes.API_CHECK_ROOM;
 
         this.axiosClient.request({
-            url: format(routes.API_GO_HOME_FLIGHT, missionData.flight_id),
-            method: 'PUT',
+            url: url,
+            method: 'POST',
             data: data
         }, {
-            done: () => {
-                console.log('Call success API_GO_HOME_FLIGHT')
+            done: (response) => {
+                console.log('Call success get room data');
+                var roomData = response.data;
+                var members = roomData.room_members;
+                var joined = false;
+                var currentUser = this.socket.client.user;
+                members.forEach(function(member){
+                    if(member.user_id === currentUser.user_id && member.user_type === currentUser.user_type){
+                        joined = true;
+
+                        this.socket.join(room);
+                        console.log(this.socket.id + " join room " + room);
+                    }
+                }, this);
+                if(!joined){
+                   throw new Error();
+                }
+                this.systemHandler.responseSuccessNotification(notificationSuccess.JOIN_ROOM_SUCCESS);
+
             },
-            fail: () => {
-                console.log('Error when call api API_GO_HOME_FLIGHT')
+            fail: (error) => {
+                console.log('Error when join room')
+                this.systemHandler.responseErrorNotification(notificationError.JOIN_ROOM_ERROR);
+
             }
         })
-
-        // this.socket.emit(events.REQUEST_ROOM_SUCCEED_WEB, response.data.data.id)
     }
 
     requestLeaveRoom(data) {
-        let room = data.room
+        console.log(data);
+        let room = data
         this.socket.leave(room);
         console.log(this.socket.rooms);
+        this.systemHandler.responseSuccessNotification(notificationSuccess.LEAVE_ROOM_SUCCESS);
     }
 }
