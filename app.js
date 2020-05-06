@@ -30,6 +30,15 @@ require('socketio-auth')(io, {
 io.on('connection', function (socket) {
     console.log("Socket:" + socket.id + "connect" );
 
+    sub.subscribe("peasy_database_system_message");
+    sub.on("message", function(channel, message){
+        if(channel === "peasy_database_system_message"){
+            var data = JSON.parse(message);
+            var room = process.env.ROOM_ALIAS + data.room_id;
+            io.sockets.to(room).emit("receiver_message", {
+                msg: data});
+        }
+    })
     socket.on('seen_message', function(messageId) {
         seenMessage(socket, messageId).then(function (response){
             var room = process.env.ROOM_ALIAS + response.room_id;
@@ -114,7 +123,7 @@ io.on('connection', function (socket) {
 
 function authenticate(socket, data, callback) {
     var accessToken = data.accessToken;
-
+  //  console.log(accessToken);
     axios({
         method: 'post',
         url: process.env.API_URL + 'v1/socket/check-device-token',
