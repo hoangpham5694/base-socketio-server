@@ -9,7 +9,6 @@ const pool = new Pool({
 
 module.exports = class PgClient{
     createMessage (param, callback = null) {
-        //const { name, email } = request.body
         pool.query('INSERT INTO messages (content, room_id, user_id, user_type, socket_id, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [param.content, param.room_id, param.user_id, param.user_type, param.socket_id, this.timestameNow()], (error, results) => {
 
