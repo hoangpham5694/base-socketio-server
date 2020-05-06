@@ -23,7 +23,6 @@ module.exports = class MessageHandler {
     requestSendMessage(data, room) {
         this.socket.component = {}
         this.socket.component.server = this.serverComponent
-        this.axiosClient = new AxiosHelper()
         this.sendMessagePromise(data, room).then(function(){
             console.log("send message success");
             this.systemHandler.responseSuccessNotification(notificationSuccess.SEND_MESSAGE_SUCCESS);
@@ -31,7 +30,7 @@ module.exports = class MessageHandler {
         }).catch(function(error){
            console.log("can not send message");
            this.systemHandler.responseErrorNotification(notificationError.SEND_MESSAGE_ERROR);
-        })
+        }.bind(this))
 
     }
     sendMessagePromise(data, room){
@@ -49,9 +48,15 @@ module.exports = class MessageHandler {
                     };
                     pgClient.createMessage(param, {
                         done: (result) => {
+                            var userData = this.socket.client.user.user
+                            var userDataResponse = {
+                                id: userData.id,
+                                profile_image: userData.profile_image,
+                                nick_name: userData.nick_name,
+                            }
+                            result.user = userDataResponse;
                             this.io.sockets.to(room).emit("receiver_message", {msg: result});
-                            this.checkMemberForPushNoti(room);
-
+                            this.checkMemberForPushNoti(roomData);
                         },
                         fail: (error) => {
                             reject(error);
@@ -69,85 +74,40 @@ module.exports = class MessageHandler {
     }
     getRoomData(room){
         return new Promise((resolve, reject)=>{
-            var roomDetail = this.io.sockets.adapter.rooms[room];
-            var socketsInRoom = Object.keys(roomDetail.sockets);
-            this.axiosClient.request({
-                url: routes.API_CHECK_ROOM ,
-                method: 'POST',
-                data: {
-                    'channel' : room,
-                }
-            },{
-                done: (response)=>{
-                    resolve(response.data)
+            var pgClient = new PgClient();
+            pgClient.getRoomData(room, {
+                done: (data) => {
+                    resolve(data);
                 },
-                fail: (error)=>{
-                    reject(error)
-                }
-            });
-        })
-    }
-    // callApiSendMessage(roomData, msg){
-    //      return new Promise((resolve, reject)=>{
-    //          this.axiosClient.request({
-    //              url: routes.API_SEND_MESSAGE,
-    //              method: 'POST',
-    //              data: {
-    //                  user_id : this.socket.client.user.user_id,
-    //                  user_type : this.socket.client.user.user_type,
-    //                  room_id: roomData.id,
-    //                  socket_id : this.socket.id,
-    //                  content: msg
-    //              }
-    //          }, {
-    //              done: (response) => {
-    //                  resolve(response.data);
-    //              },
-    //              fail: (error) => {
-    //                  console.log('Error')
-    //                  reject(error);
-    //
-    //              }
-    //          })
-    //      })
-    // }
-
-    checkMemberForPushNoti(room){
-        return new Promise((resolve, reject) => {
-            var roomDetail = this.io.sockets.adapter.rooms[room];
-            var socketsInRoom = Object.keys(roomDetail.sockets);
-            this.axiosClient.request({
-                url: routes.API_CHECK_ROOM,
-                method: 'POST',
-                data: {
-                    'channel' : room,
-                }
-            }, {
-                done: (response) => {
-                    var members = response.data.room_members;
-                    members.forEach(function(member){
-                        var online = false;
-                        socketsInRoom.forEach(function(item, index){
-                            var socketInRoom = this.io.sockets.connected[item];
-                            var clientUser = socketInRoom.client.user;
-
-                            if(member.user_id === clientUser.user_id && member.user_type === clientUser.user_type){
-                                online = true;
-                            }
-                        }, this);
-                        if(!online && !(member === this.socket.client.user && member === this.socket.client.user)){
-                            console.log("Push user " + member.user_id);
-                            //TODO call push notification
-                        }
-                    }, this);
-                },
-                fail: (error) => {
-                    console.log(error);
-                    return reject();
+                fail: () => {
+                    console.log("get room data fail");
+                    reject(new Error());
                 }
             })
-            return resolve();
-        })
+         })
+    }
+
+
+    checkMemberForPushNoti(roomData){
+        var members = roomData.user;
+        var roomDetail = this.io.sockets.adapter.rooms[roomData.channel];
+        var socketsInRooms = Object.keys(roomDetail.sockets);
+
+        members.forEach(function(member){
+            var online = false;
+            socketsInRooms.forEach(function(item, index){
+                var socketInRoom = this.io.sockets.connected[item];
+                var clientUser = socketInRoom.client.user;
+                if(parseInt(member.user_id) === parseInt(clientUser.user_id) && member.user_type === clientUser.user_type){
+                    online = true;
+                }
+            }, this);
+
+            if(!online && !(member === this.socket.client.user && member === this.socket.client.user)){
+                console.log("Push user " + member.user_id);
+                //TODO call push notification
+            }
+        }, this);
     }
 
     requestSeenMessage(data) {

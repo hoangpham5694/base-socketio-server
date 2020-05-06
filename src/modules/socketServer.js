@@ -7,6 +7,7 @@ const routes = require('../constants/apis')
 const AxiosHelper = require('../helpers/axios.js')
 var redis = require('redis');
 const redisAdapter = require('socket.io-redis');
+const PgClient = require('../helpers/pgClient')
 
 const pub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
 const sub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
@@ -86,21 +87,12 @@ module.exports = class SocketServer {
         // this.bugsnag.notify(new Error(error))
         console.log(error)
     }
-    authenticate (socket, data, callback) {
-        this.axiosClient = new AxiosHelper();
-        let self = this;
 
-        var accessToken = data.accessToken;
-        var url= routes.API_CHECK_TOKEN;
-        this.axiosClient.request({
-            url: url,
-            method: 'POST',
-            data: {
-                access_token: data.accessToken
-            }
-        }, {
-            done: (response) => {
-                socket.client.user = response.data;
+    authenticate(socket, data, callback){
+        var pgClient = new PgClient();
+        pgClient.checkAuthenticate(data.accessToken, {
+            done: (data) => {
+                socket.client.user = data;
                 console.log("current socket: " + socket.id);
                 for(var id in this.io.of("/").connected){
                     var s = this.io.of("/").connected[id];
@@ -109,21 +101,23 @@ module.exports = class SocketServer {
                         s.disconnect();
                         continue;
                     }
-                    if(s.client.user.access_token == response.data.access_token && s.id != socket.id){
+                    if(s.client.user.access_token === data.access_token && s.id !== socket.id){
                       //  console.log(s.client.user);
                         s.disconnect();
                     }
                 }
 
                 return callback(null, true);
+
             },
             fail: (error) => {
-                console.log('Error')
                 console.log(error);
                 return callback(new Error("token not found"));
             }
         })
+
     }
+
     postAuthenticate () {
       //  console.log("authenticated");
 
