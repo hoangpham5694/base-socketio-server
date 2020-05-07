@@ -9,6 +9,7 @@ const PgClient = require('../helpers/pgClient')
 const SystemHandler = require('../handlers/systemHandler')
 const notificationError = require('../constants/notificationError')
 const notificationSuccess = require('../constants/notificationSuccess')
+const RedisPubSub = require('../helpers/redisPubSub')
 
 
 module.exports = class MessageHandler {
@@ -105,7 +106,8 @@ module.exports = class MessageHandler {
 
             if(!online && !(member === this.socket.client.user && member === this.socket.client.user)){
                 console.log("Push user " + member.user_id);
-                //TODO call push notification
+                var redisPubSub = new RedisPubSub();
+                redisPubSub.pushMessage(member);
             }
         }, this);
     }
