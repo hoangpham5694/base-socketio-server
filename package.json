@@ -1,9 +1,7 @@
 {
-  "name": "socketio-server",
+  "name": "peasy-socket-server",
   "version": "1.0.0",
   "main": "main.js",
-  "repository": "https://github.com/Quynh-Nguyen/socketio-server.git",
-  "author": "Drone Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^0.18.0",
@@ -17,6 +15,7 @@
     "hashids": "^1.1.4",
     "http": "^0.0.0",
     "https": "^1.0.0",
+    "moment": "^2.25.3",
     "pg": "^8.0.3",
     "redis": "^3.0.2",
     "schemapack": "^1.4.2",
