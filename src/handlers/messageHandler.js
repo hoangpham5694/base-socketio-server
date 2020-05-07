@@ -107,7 +107,10 @@ module.exports = class MessageHandler {
             if(!online && !(member === this.socket.client.user && member === this.socket.client.user)){
                 console.log("Push user " + member.user_id);
                 var redisPubSub = new RedisPubSub();
-                redisPubSub.pushMessage(member);
+                var pushDetail = new Object();
+                pushDetail.roomMember = member;
+                pushDetail.roomId = roomData.id;
+                redisPubSub.pushMessage(pushDetail);
             }
         }, this);
     }
