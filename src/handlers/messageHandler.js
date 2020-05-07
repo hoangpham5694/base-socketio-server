@@ -110,6 +110,7 @@ module.exports = class MessageHandler {
                 var pushDetail = new Object();
                 pushDetail.roomMember = member;
                 pushDetail.roomId = roomData.id;
+                pushDetail.bookingId = roomData.booking_id;
                 redisPubSub.pushMessage(pushDetail);
             }
         }, this);
