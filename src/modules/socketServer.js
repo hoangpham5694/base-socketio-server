@@ -45,12 +45,27 @@ module.exports = class SocketServer {
 
         this.io.on('connection', (socket) => this.onConnection(socket, this.io))
         this.io.on('error', (error) => this.onError(error))
+        sub.subscribe("peasy_database_system_message");
+
+        sub.on("message", function(channel, data){
+            if(channel === "peasy_database_system_message"){
+                var data = JSON.parse(data);
+                var message = data.message;
+                var room = data.channel;
+
+                this.io.sockets.to(room).emit("receiver_message", {
+                    msg: message});
+            }
+
+        }.bind(this))
 
     }
 
     /*
      * SocketServer onConnection event
      */
+
+
     onConnection (socket, io) {
 
 
@@ -58,17 +73,6 @@ module.exports = class SocketServer {
 
         this.setHandlers(socket)
 
-        sub.subscribe("peasy_database_system_message");
-        sub.on("message", function(channel, data){
-            if(channel === "peasy_database_system_message"){
-                var data = JSON.parse(data);
-                var message = data.message;
-                var channel = data.channel;
-
-                io.sockets.to(channel).emit("receiver_message", {
-                    msg: message});
-            }
-        })
 
 
         socket.on('disconnect', this.onDisconnect)
