@@ -2,6 +2,7 @@
 
 const RoomHandler = require('./roomHandler')
 const MessageHandler = require('./messageHandler')
+const SeenHander = require('./seenHandler')
 const events = require('../constants/events')
 
 
@@ -14,6 +15,7 @@ module.exports = class BaseHandler {
         this.setHandlers()
         this.room()
         this.message()
+        this.seen()
 
         // console.log('usingHashId', this.socket.usingHashId)
     }
@@ -37,9 +39,16 @@ module.exports = class BaseHandler {
             self.messageHandler.requestSeenMessage(data)
         })
     }
+    seen () {
+        let self = this
+        this.socket.on(events.REQUEST_SEEN_MSG, (data) => {
+            self.seenHandler.requestSeen(data)
+        })
+    }
 
     setHandlers () {
         this.roomHandler = new RoomHandler(this.socket, this.io)
         this.messageHandler = new MessageHandler(this.socket, this.io)
+        this.seenHandler = new SeenHander(this.socket, this.io)
     }
 }
