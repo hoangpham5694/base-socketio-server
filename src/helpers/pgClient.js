@@ -38,6 +38,16 @@ module.exports = class PgClient{
         return;
 
     }
+    async getRoomDataFromRoomId(roomId, callback = null){
+        var res = await pool.query('select rooms.* from rooms where id = $1 limit 1',[roomId]);
+        if(res.rows.length > 0){
+            var room = res.rows[0];
+            callback.done(room);
+            return;
+        }
+        callback.fail();
+        return;
+    }
 
     async checkAuthenticate(accessToken, callback = null){
         var res = await pool.query('select * from device_tokens where access_token = $1 limit 1',[accessToken]);
@@ -59,7 +69,22 @@ module.exports = class PgClient{
         return;
     }
 
+    async updateSeenAt(roomId, userId, userType, callback = null){
+        var sql = "UPDATE room_members SET " +
+            "seen_at = $1 " +
+            "WHERE room_id = $2 and " +
+            "user_id = $3 and " +
+            "user_type= $4 RETURNING *";
+        var result = await pool.query(sql,[this.timestameNow(), roomId, userId, userType]);
 
+        if(result.rows.length > 0){
+            callback.done(result.rows[0]);
+        }else{
+            calback.fail(new Error("can not update"));
+        }
+
+
+    }
 
     timestameNow(){
         let date_ob = new Date().toISOString();

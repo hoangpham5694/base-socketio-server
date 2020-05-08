@@ -4,6 +4,8 @@ module.exports = {
     REQUEST_SEND_MSG: 'send_message',
     REQUEST_SEEN_MSG: 'seen_message',
 
+    RESPONSE_SEEN_MSG: 'seen_message_response',
+
     DEFAULT_SOCKETIO_EVENTS: [
         'error',
         'connect',
