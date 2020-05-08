@@ -52,6 +52,10 @@ module.exports = class SocketServer {
                 var data = JSON.parse(data);
                 var message = data.message;
                 var room = data.channel;
+                var booking = data.booking;
+
+                this.io.sockets.to(room).emit("update_booking", {
+                    booking: booking});
 
                 this.io.sockets.to(room).emit("receiver_message", {
                     msg: message});
