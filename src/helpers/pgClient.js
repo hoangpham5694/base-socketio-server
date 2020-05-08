@@ -49,7 +49,7 @@ module.exports = class PgClient{
         return;
     }
 
-    async checkAuthenticate(accessToken, callback = null){
+    async getUserFromAccessToken(accessToken, callback = null){
         var res = await pool.query('select * from device_tokens where access_token = $1 limit 1',[accessToken]);
         if(res.rows.length > 0){
             var result = res.rows[0]
