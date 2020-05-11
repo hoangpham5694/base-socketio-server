@@ -1,8 +1,5 @@
 'use strict'
 
-const format = require('string-format')
-const routes = require('../constants/apis')
-const events = require('../constants/events')
 const serverComponent = require('../components/serverComponent')
 const ServerInfoEmitter = require('../emitters/serverInfoEmitter')
 const notificationError = require('../constants/notificationError')
@@ -18,7 +15,7 @@ module.exports = class SeenHandler {
         this.io = io
         this.socket.component = {}
         this.serverComponent = new serverComponent()
-        this.emitter = new NormalEmitter(this.socket, this.io)
+        this.emitter = new NormalEmitter(this.io)
         this.serverInfoEmitter = new ServerInfoEmitter(this.socket, this.io)
         this.dataParser = new DataParser()
     }
@@ -44,10 +41,5 @@ module.exports = class SeenHandler {
                 this.serverInfoEmitter.responseErrorNotification(notificationError.SEEN_MESSAGE_ERROR)
             }
         });
-
-
-
     }
-
-
 }

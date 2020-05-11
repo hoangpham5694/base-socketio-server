@@ -10,6 +10,13 @@ module.exports = class DataParser {
 
         }
     }
+    parseUserData(userData){
+        return {
+            id: userData.id,
+            profile_image: userData.profile_image,
+            nick_name: userData.nick_name,
+        }
 
+    }
 
 }

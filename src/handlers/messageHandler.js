@@ -6,10 +6,12 @@ const routes = require('../constants/apis')
 const events = require('../constants/events')
 const serverComponent = require('../components/serverComponent')
 const PgClient = require('../helpers/pgClient')
-const SystemHandler = require('../handlers/systemHandler')
+const ServerInfoEmitter = require('../emitters/serverInfoEmitter')
 const notificationError = require('../constants/notificationError')
 const notificationSuccess = require('../constants/notificationSuccess')
 const RedisPubSub = require('../helpers/redisPubSub')
+const NormalEmitter = require('../emitters/normalEmitter')
+const DataParser = require('../helpers/dataParser')
 
 
 module.exports = class MessageHandler {
@@ -18,59 +20,54 @@ module.exports = class MessageHandler {
         this.io = io
         this.socket.component = {}
         this.serverComponent = new serverComponent()
-        this.systemHandler = new SystemHandler(this.socket, this.io)
+        this.serverInfoEmitter = new ServerInfoEmitter(this.socket, this.io)
+        this.normalEmitter = new NormalEmitter(this.io)
+        this.dataParser = new DataParser()
     }
 
-    requestSendMessage(data, room) {
+    requestSendMessage(data, roomName) {
         this.socket.component = {}
         this.socket.component.server = this.serverComponent
-        this.sendMessagePromise(data, room).then(function(){
+        this.sendMessagePromise(data, roomName).then(function(){
             console.log("send message success");
-            this.systemHandler.responseSuccessNotification(notificationSuccess.SEND_MESSAGE_SUCCESS);
+            this.serverInfoEmitter.responseSuccessNotification(notificationSuccess.SEND_MESSAGE_SUCCESS);
 
         }).catch(function(error){
            console.log("can not send message");
-           this.systemHandler.responseErrorNotification(notificationError.SEND_MESSAGE_ERROR);
+           this.serverInfoEmitter.responseErrorNotification(notificationError.SEND_MESSAGE_ERROR);
         }.bind(this))
 
     }
-    sendMessagePromise(data, room){
+    sendMessagePromise(data, roomName){
         return new Promise((resolve, reject) =>{
-            if(this.socket.rooms[room] ){
-                this.getRoomData(room).then(function(roomData){
-
-                    var pgClient = new PgClient();
-                    var param = {
-                        room_id: roomData.id,
-                        content: data,
-                        user_id : this.socket.client.user.user_id,
-                        user_type : this.socket.client.user.user_type,
-                        socket_id : this.socket.id,
-                    };
-                    pgClient.createMessage(param, {
-                        done: (result) => {
-                            var userData = this.socket.client.user.user
-                            var userDataResponse = {
-                                id: userData.id,
-                                profile_image: userData.profile_image,
-                                nick_name: userData.nick_name,
-                            }
-                            result.user = userDataResponse;
-                            this.io.sockets.to(room).emit("receiver_message", {msg: result});
-                            this.checkMemberForPushNoti(roomData);
-                        },
-                        fail: (error) => {
-                            reject(error);
-                        }
-                    });
-
-                }.bind(this)).catch(function(error){
-                    console.log(error);
-                    reject(error);
-                })
-            }else{
+            if(!this.socket.rooms[roomName] ){
                 reject(new Error("user not in room"));
             }
+            this.getRoomData(roomName).then(function(roomData){
+
+                var pgClient = new PgClient();
+                var param = {
+                    room_id: roomData.id,
+                    content: data,
+                    user_id : this.socket.client.user.user_id,
+                    user_type : this.socket.client.user.user_type,
+                    socket_id : this.socket.id,
+                };
+                pgClient.createMessage(param, {
+                    done: (result) => {
+                        var userData = this.socket.client.user.user
+                        result.user = this.dataParser.parseUserData(userData);
+                        this.normalEmitter.emitReceiverMessage(roomName, result)
+                        this.checkMemberForPushNoti(roomData);
+                    },
+                    fail: (error) => {
+                        reject(error);
+                    }
+                });
+
+            }.bind(this)).catch(function(error){
+                reject(error);
+            })
         })
     }
     getRoomData(room){
