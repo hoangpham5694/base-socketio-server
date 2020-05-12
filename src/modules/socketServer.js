@@ -7,6 +7,7 @@ const redisAdapter = require('socket.io-redis');
 const PgClient = require('../helpers/pgClient')
 const RedisPubSub = require('../helpers/redisPubSub')
 const ServerHelper = require('../helpers/serverHelper')
+const UserManagermentComponent =  require('../components/userManagerComponent')
 
 const pub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
 const sub = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
@@ -24,6 +25,7 @@ module.exports = class SocketServer {
             // parser: customParser
         })
         this.io.adapter(redisAdapter({pubClient: pub, subClient: sub}));
+
         this.authenticate = this.authenticate.bind(this);
         require('socketio-auth')(this.io, {
             authenticate: this.authenticate,
@@ -67,6 +69,8 @@ module.exports = class SocketServer {
      */
     onDisconnect (socket) {
         console.log(socket.id + ' is disconnected.')
+        var userManagermentComponent = new UserManagermentComponent();
+        userManagermentComponent.removeUser(socket.id);
     }
 
     setHandlers (socket) {
@@ -83,6 +87,8 @@ module.exports = class SocketServer {
         pgClient.getUserFromAccessToken(data.accessToken, {
             done: (data) => {
                 socket.client.user = data;
+                var userManagermentComponent = new UserManagermentComponent();
+                userManagermentComponent.addUser(socket.id, data)
                 ServerHelper.disconnectOldUser(socket, this.io)
                 return callback(null, true);
             },
