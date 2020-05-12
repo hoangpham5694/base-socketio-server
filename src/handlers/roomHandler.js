@@ -16,6 +16,7 @@ module.exports = class RoomHandler {
     }
 
     requestRoom(roomName) {
+        console.log("Handler:Join room")
         this.socket.component = {}
         this.socket.component.server = this.serverComponent
         var pgClient = new PgClient();
@@ -55,6 +56,7 @@ module.exports = class RoomHandler {
     }
 
     requestLeaveRoom(data) {
+        console.log("Handler:Leave room")
         console.log(data);
         let roomName = data
         this.socket.leave(roomName);

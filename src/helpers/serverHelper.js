@@ -5,17 +5,15 @@ module.exports = class ServerHelper{
     static disconnectOldUser(socket, io){
         var userManagerment = new UserManagermentComponent()
         console.log("current socket: " + socket.id);
-     //   console.log(io.of("/"ts());
         io.of("/").adapter.clients((err, clients)=>{
             console.log(clients);
             clients.forEach(function(clientId){
                 userManagerment.isExistUser(clientId, {
                     done: (result) => {
-                        console.log(result)
                         userManagerment.getUser(clientId,{
                             done:(user) =>{
                                 user = JSON.parse(user);
-                                console.log(user);
+                              //  console.log(user);
                                if(user.access_token === socket.client.user.access_token && clientId !== socket.id){
                                    io.of("/").adapter.remoteDisconnect(clientId, true);
                                }
