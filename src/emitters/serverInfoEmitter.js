@@ -33,7 +33,9 @@ module.exports = class SystemHandler {
             'data': data
         };
         this.io.to(socketId).emit("system_message", msg);
-        console.log("send message to "+ socketId);
+        console.log("Emitter:ServerInfoEmitter:To:"+ socketId);
+        console.log("Emitter:ServerInfoEmitter:status:"+ msg.status);
+        console.log("Emitter:ServerInfoEmitter:code:"+ msg.code);
     }
 
 }

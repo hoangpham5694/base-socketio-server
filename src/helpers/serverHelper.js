@@ -6,7 +6,6 @@ module.exports = class ServerHelper{
         var userManagerment = new UserManagermentComponent()
         console.log("current socket: " + socket.id);
         io.of("/").adapter.clients((err, clients)=>{
-            console.log(clients);
             clients.forEach(function(clientId){
                 userManagerment.isExistUser(clientId, {
                     done: (result) => {
