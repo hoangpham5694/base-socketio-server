@@ -26,6 +26,9 @@ module.exports = class MessageHandler {
     }
 
     requestSendMessage(data, roomName) {
+        console.log("Handler:Send message")
+        console.log(data)
+        console.log(roomName)
         this.socket.component = {}
         this.socket.component.server = this.serverComponent
         this.sendMessagePromise(data, roomName).then(function(){
@@ -42,6 +45,7 @@ module.exports = class MessageHandler {
         return new Promise((resolve, reject) =>{
             if(!this.socket.rooms[roomName] ){
                 reject(new Error("user not in room"));
+                return;
             }
             this.getRoomData(roomName).then(function(roomData){
 

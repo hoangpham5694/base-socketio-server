@@ -21,6 +21,8 @@ module.exports = class SeenHandler {
     }
 
     requestSeen(roomId) {
+        console.log("Handler:Seen message")
+        console.log(roomId)
         var user = this.socket.client.user;
         var pgClient = new PgClient();
 
