@@ -12,6 +12,8 @@ const notificationSuccess = require('../constants/notificationSuccess')
 const RedisPubSub = require('../helpers/redisPubSub')
 const NormalEmitter = require('../emitters/normalEmitter')
 const DataParser = require('../helpers/dataParser')
+const FireBaseHelper = require('../helpers/firebaseHelper')
+const notification = require('../constants/notification')
 
 
 module.exports = class MessageHandler {
@@ -106,15 +108,40 @@ module.exports = class MessageHandler {
             }, this);
 
             if(!online && !(member === this.socket.client.user && member === this.socket.client.user)){
-                console.log("Push user " + member.user_id);
-                var redisPubSub = new RedisPubSub();
-                var pushDetail = new Object();
-                pushDetail.roomMember = member;
-                pushDetail.roomId = roomData.id;
-                pushDetail.bookingId = roomData.booking_id;
-                redisPubSub.pushMessage(pushDetail);
+                console.log("Push user " + member.user_id + " - " + member.user_type);
+                this.pushNotificationMessage(member, roomData.id, roomData.booking_id)
             }
         }, this);
+    }
+
+    pushNotificationMessage(user, roomId, bookingId) {
+        console.log("Handler:Send_message:Push_notification")
+        var pgClient = new PgClient();
+        pgClient.getDeviceTokenFromUserId(user.user_id, user.user_type, {
+            done: (success)=>{
+                var device_token = success;
+                var dataPush = {
+                    title: notification.title.new_message,
+                    message: notification.message.new_message,
+                    type: notification.type.new_message,
+                    data: {
+                        booking_id: bookingId,
+                        room_id: roomId
+                    }
+                }
+                var firebaseHelper = new FireBaseHelper();
+
+                firebaseHelper.pushToDeviceToken(dataPush, device_token.device_token, {
+                    done: (success)=>{
+                        console.log("Handler:Send_message:Push_notification:Success")
+                    }, fail(err){
+                        console.log("Handler:Send_message:Push_notification:Error")
+                        console.log(err)
+                    }
+                })
+            }
+        })
+
     }
 
     requestSeenMessage(data) {
