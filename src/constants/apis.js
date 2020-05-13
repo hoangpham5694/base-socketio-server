@@ -8,4 +8,6 @@ module.exports = {
     API_CHECK_TOKEN: API_BASE_URL + 'v1/socket/check-device-token',
     API_CHECK_ROOM: API_BASE_URL + 'v1/socket/check-chat-room',
     API_SEND_MESSAGE: API_BASE_URL + 'v1/socket/send-message',
+
+    API_FIREBASE: "https://fcm.googleapis.com/fcm/send"
 };

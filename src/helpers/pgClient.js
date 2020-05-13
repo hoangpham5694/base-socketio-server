@@ -69,6 +69,15 @@ module.exports = class PgClient{
         return;
     }
 
+    async getDeviceTokenFromUserId(userId, userType, callback = null){
+        var res = await pool.query('select * from device_tokens where user_id = $1 and user_type = $2 and status = $3 limit 1', [userId, userType, globalVariable.STATUS_LOGIN]);
+        if(res.rows.length > 0){
+            callback.done(res.rows[0])
+            return;
+        }
+        callback.fail(new Error())
+    }
+
     async updateSeenAt(roomId, userId, userType, callback = null){
         var sql = "UPDATE room_members SET " +
             "seen_at = $1 " +
