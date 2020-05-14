@@ -5,6 +5,7 @@ module.exports = class DataParser {
         return {
             id : roomMember.id,
             user_id : roomMember.user_id,
+            user_type : roomMember.user_type,
             room_id : roomMember.room_id,
             seen_at : roomMember.seen_at,
 
