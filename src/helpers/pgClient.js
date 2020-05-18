@@ -16,8 +16,8 @@ types.setTypeParser(1114, str => moment.utc(str).toISOString())
 
 module.exports = class PgClient{
     async createMessage (param, callback = null) {
-        var result = await pool.query('INSERT INTO messages (content, room_id, user_id, user_type, socket_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [param.content, param.room_id, param.user_id, param.user_type, param.socket_id, this.timestameNow(), this.timestameNow()]);
+        var result = await pool.query('Insert *** RETURNING *',
+            []);
 
         var message = result.rows[0];
 
@@ -25,75 +25,6 @@ module.exports = class PgClient{
         return;
     }
 
-    async getRoomData(channel, callback = null){
-        var res = await pool.query('select rooms.* from rooms where rooms.channel = $1 limit 1',[channel]);
-        if(res.rows.length > 0){
-            var room = res.rows[0];
-            var roomMembers = await pool.query('select * from room_members where room_id = $1',[room.id]);
-            room.user = roomMembers.rows;
-            callback.done(room);
-            return;
-        }
-        callback.fail();
-        return;
-
-    }
-    async getRoomDataFromRoomId(roomId, callback = null){
-        var res = await pool.query('select rooms.* from rooms where id = $1 limit 1',[roomId]);
-        if(res.rows.length > 0){
-            var room = res.rows[0];
-            callback.done(room);
-            return;
-        }
-        callback.fail();
-        return;
-    }
-
-    async getUserFromAccessToken(accessToken, callback = null){
-        var res = await pool.query('select * from device_tokens where access_token = $1 limit 1',[accessToken]);
-        if(res.rows.length > 0){
-            var result = res.rows[0]
-            var user = null;
-            if(result.user_type === globalVariable.USER_OWNER){
-                user = await pool.query('select * from owners where id = $1',[result.user_id]);
-            }
-            else{
-                user = await pool.query('select * from sitters where id = $1',[result.user_id]);
-            }
-
-            result.user = user.rows[0];
-            callback.done(result)
-            return;
-        }
-        callback.fail()
-        return;
-    }
-
-    async getDeviceTokenFromUserId(userId, userType, callback = null){
-        var res = await pool.query('select * from device_tokens where user_id = $1 and user_type = $2 and status = $3 limit 1', [userId, userType, globalVariable.STATUS_LOGIN]);
-        if(res.rows.length > 0){
-            callback.done(res.rows[0])
-            return;
-        }
-        callback.fail(new Error())
-    }
-
-    async updateSeenAt(roomId, userId, userType, callback = null){
-        var sql = "UPDATE room_members SET " +
-            "seen_at = $1 " +
-            "WHERE room_id = $2 and " +
-            "user_id = $3 and " +
-            "user_type= $4 RETURNING *";
-        var result = await pool.query(sql,[this.timestameNow(), roomId, userId, userType]);
-
-        if(result.rows.length > 0){
-            callback.done(result.rows[0]);
-        }else{
-            calback.fail(new Error("can not update"));
-        }
-
-
-    }
 
     timestameNow(){
         let date_ob = new Date().toISOString();
