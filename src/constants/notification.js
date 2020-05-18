@@ -1,11 +1,11 @@
 module.exports = {
     title : {
-        new_message : 'メッセージが届いています'
+        new_message : ''
     },
     message : {
-        new_message : 'メッセージを確認してください'
+        new_message : ''
     },
     type : {
-        new_message : 'new_message'
+        new_message : ''
     }
 }
