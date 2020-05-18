@@ -1,21 +1,15 @@
 
 module.exports = class DataParser {
 
-    parseRoomMember(roomMember){
+    parseRoomMember(data){
         return {
-            id : roomMember.id,
-            user_id : roomMember.user_id,
-            user_type : roomMember.user_type,
-            room_id : roomMember.room_id,
-            seen_at : roomMember.seen_at,
+            key: data.value
 
         }
     }
-    parseUserData(userData){
+    parseUserData(data){
         return {
-            id: userData.id,
-            profile_image: userData.profile_image,
-            nick_name: userData.nick_name,
+            key: data.value
         }
 
     }
